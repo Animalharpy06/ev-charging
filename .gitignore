@@ -1,6 +1,5 @@
 data/
 output/
-cache/
 *.parquet
 *.zip
 *.xml
@@ -10,4 +9,4 @@ __pycache__/
 *.pyc
 .env
 *.xlsx
-*.Zone.Identifier
+config.yaml
