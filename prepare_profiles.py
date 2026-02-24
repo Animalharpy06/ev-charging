@@ -7,16 +7,14 @@ Created on Mon Feb 23 15:38:26 2026
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import os
+
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-TYPICAL_DAYS_PATH = "//wsl.localhost/Ubuntu-22.04/home/mattiasamore/project/post_processing/TypicalDays.xlsx"
 SLOT_DURATION     = 900
 N_SLOTS           = 96
 
-def build_profiles():
-    ts       = pd.read_excel(TYPICAL_DAYS_PATH, sheet_name="TimeSeries", index_col=[0, 1])
+def build_profiles(typical_days_path):
+    ts       = pd.read_excel(typical_days_path, sheet_name="TimeSeries", index_col=[0, 1])
     SolRad_h = ts["SolarRad_glob[W/m2]"].to_numpy()
     Price_h  = ts["ElectricityPrice[€/MWh]"].to_numpy()
     hours_24 = np.arange(24, dtype=float)

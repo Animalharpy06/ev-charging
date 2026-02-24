@@ -5,6 +5,7 @@ Created on Fri Feb 20 11:00:42 2026
 """
 
 import os
+import yaml
 import pandas as pd
 from network_parser import parse_network, build_length_lookup, links_to_dataframe
 from events_parser import parse_events
@@ -14,15 +15,20 @@ from prepare_profiles import build_profiles
 from optimize import run_optimization
 from plot_results import plot_results
 
-# ── Config ────────────────────────────────────────────────────────────────
-BASE_DIR      = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SIM_OUTPUT    = os.path.join(BASE_DIR, "output", "simulation_output")
-OUTPUT_DIR    = os.path.join(BASE_DIR, "post_processing", "output")
+
+# ── Load config ───────────────────────────────────────────────────────────────
+with open(os.path.join(os.path.dirname(__file__), "config.yaml")) as f:
+    cfg = yaml.safe_load(f)
+
+SIM_OUTPUT        = cfg["eqasim_output"]
+OUTPUT_DIR        = cfg["pipeline_output"]
+TYPICAL_DAYS_PATH = cfg["typical_days"]
 
 NETWORK_PATH  = os.path.join(SIM_OUTPUT, "output_network.xml.gz")
 EVENTS_PATH   = os.path.join(SIM_OUTPUT, "output_events.xml.gz")
 PLANS_PATH    = os.path.join(SIM_OUTPUT, "output_plans.xml.gz")
 VEHICLES_PATH = os.path.join(SIM_OUTPUT, "output_allVehicles.xml")
+
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 print("Saving outputs to:", OUTPUT_DIR)
@@ -56,16 +62,14 @@ discharge_df.to_parquet(os.path.join(OUTPUT_DIR, "discharge_profile.parquet"))
 print(f"  → {discharge_df['vehicle_id'].nunique():,} vehicles | "
       f"{discharge_df['energy_consumed_kWh'].sum():.1f} kWh total consumed")
 
-
 # ── Step 4b: Input profiles (solar + price) ───────────────────────────────
 print("\n[Step 4b] Building input profiles...")
-profiles_df = build_profiles()
+profiles_df = build_profiles(TYPICAL_DAYS_PATH)
 profiles_df.to_parquet(os.path.join(OUTPUT_DIR, "input_profiles.parquet"))
 print(f"  → {len(profiles_df)} slots | "
       f"Peak solar: {profiles_df['SolRad_Wm2'].max():.1f} W/m² | "
       f"Price range: {profiles_df['Price_EURkWh'].min()*1000:.1f}–"
       f"{profiles_df['Price_EURkWh'].max()*1000:.1f} €/MWh")
-
 
 # ── Step 5: Gurobi optimization ───────────────────────────────────────────
 print("\n[Step 5] Running optimization...")

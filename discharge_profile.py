@@ -9,8 +9,6 @@ import pandas as pd
 import numpy as np
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-TIMETABLE_PATH  = "output/vehicle_timetable.parquet"
-OUTPUT_PATH     = "output/discharge_profile.parquet"
 
 SLOT_DURATION   = 900          # 15 minutes in seconds
 DAY_START       = 0
@@ -19,9 +17,6 @@ N_SLOTS         = (DAY_END - DAY_START) // SLOT_DURATION   # 96 slots
 
 EFF_EV          = 0.15         # Energy consumption [kWh/km]
 CAP_EV          = 60.0         # Battery capacity [kWh]
-
-# ── Load data ─────────────────────────────────────────────────────────────────
-timetable = pd.read_parquet(TIMETABLE_PATH)
 
 # ── Build discharge profile ───────────────────────────────────────────────────
 def build_discharge_profile(timetable):
@@ -89,25 +84,4 @@ def build_discharge_profile(timetable):
 
     return pd.DataFrame(records)
 
-# ── Run and save ───────────────────────────────────────────────────────────────
-# This block only runs when executing discharge_profile.py directly
-# It is ignored when imported by run_pipeline.py
-if __name__ == "__main__":
-    import os
-    OUTPUT_DIR = "output"
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    timetable = pd.read_parquet(os.path.join(OUTPUT_DIR, "vehicle_timetable.parquet"))
-    print("Building discharge profile...")
-    df = build_discharge_profile(timetable)
-    df.to_parquet(os.path.join(OUTPUT_DIR, "discharge_profile.parquet"))
-
-    n_vehicles = df["vehicle_id"].nunique()
-    total_energy = df["energy_consumed_kWh"].sum()
-    avg_daily_km = (total_energy / n_vehicles) / EFF_EV
-
-    print(f"  → {n_vehicles:,} vehicles | {N_SLOTS} slots per vehicle")
-    print(f"  → Total energy consumed: {total_energy:.1f} kWh")
-    print(f"  → Avg daily distance per vehicle: {avg_daily_km:.1f} km")
-    print(df[df["vehicle_id"] == df["vehicle_id"].iloc[0]].to_string())
 
