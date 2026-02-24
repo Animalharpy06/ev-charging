@@ -1,0 +1,13 @@
+data/
+output/
+cache/
+*.parquet
+*.zip
+*.xml
+*.xml.gz
+*.csv
+__pycache__/
+*.pyc
+.env
+*.xlsx
+*.Zone.Identifier
