@@ -1,222 +1,215 @@
-\# EV Fleet Smart Charging Optimization Pipeline
+Here is the full README text ready to paste:
 
+text
+# EV Fleet Smart Charging Optimization Pipeline
 
-
-This pipeline processes urban mobility simulation outputs to optimize the
-
-smart charging of an electric vehicle (EV) fleet, integrating rooftop
-
-photovoltaic (PV) generation and grid electricity pricing.
-
-It is designed to minimize the daily electricity cost of charging 1,129
-
-EVs, leveraging solar energy and time-varying electricity prices.
-
-
+This pipeline processes urban mobility simulation outputs (EQASim/MATSim) to
+optimize the smart charging of an electric vehicle (EV) fleet, integrating
+rooftop photovoltaic (PV) generation and time-varying electricity pricing.
+It minimizes the daily electricity cost of charging 1,129 EVs over a
+representative typical day.
 
 ---
 
+## Repository Structure
 
+ev-charging/
+├── data/ # Input data (NOT included in the repo — see below)
+├── output/ # Generated automatically at runtime
+├── run_pipeline.py # Main entry point — runs all steps in sequence
+├── network_parser.py
+├── events_parser.py
+├── timetable_builder.py
+├── discharge_profile.py
+├── prepare_profiles.py
+├── optimize.py
+├── plot_results.py
+├── config.yaml # Your local config (NOT in repo — see below)
+├── config.yaml.example # Template for config.yaml
+├── requirements.txt
+└── README.md
 
-\## Pipeline Overview
-
-
-
-The pipeline is composed of five sequential steps, all orchestrated by
-
-`run\_pipeline.py`. Each step reads from and writes to the `output/`
-
-folder using `.parquet` files for efficient data exchange.
-
-
-
----
-
-
-
-\### Step 3 — Typical Day Extraction (`typical\_days.py`)
-
-
-
-Processes raw mobility simulation data (from EQASim/MATSim) to extract
-
-a representative typical day for the EV fleet. Outputs a structured
-
-dataset of vehicle activity used as input for all downstream steps.
-
-
-
-\*\*Output:\*\* `output/typical\_days.parquet`
-
-
+text
 
 ---
 
+## Prerequisites
 
+### 1. Python environment
 
-\### Step 4 — Discharge Profile Builder (`discharge\_profile.py`)
-
-
-
-Converts the typical day activity data into a per-vehicle, per-slot
-
-energy profile. The day is discretized into \*\*96 time slots of 15
-
-minutes each\*\* (900 seconds). For each vehicle and each slot, it
-
-computes:
-
-
-
-\- `parked` — whether the vehicle is available for charging (1/0)
-
-\- `energy\_consumed\_kWh` — energy consumed by driving in that slot \[kWh]
-
-
-
-\*\*Output:\*\* `output/discharge\_profile.parquet`
-
-
-
----
-
-
-
-\### Step 4b — Input Profiles Builder (`prepare\_profiles.py`)
-
-
-
-Interpolates hourly solar irradiance and electricity price data (from
-
-`TypicalDays.xlsx`) onto the 96-slot 15-minute resolution used by the
-
-optimizer. Uses a \*\*slot-average interpolation\*\* method: for each slot,
-
-four sub-points are sampled within the slot window and averaged. This
-
-ensures energy consistency between the hourly source data and the
-
-15-minute model resolution.
-
-
-
-Electricity price is converted from €/MWh to €/kWh. Solar irradiance
-
-remains in W/m².
-
-
-
-\*\*Output:\*\* `output/input\_profiles.parquet`
-
-
-
----
-
-
-
-\### Step 5 — Gurobi LP Optimization (`optimize.py`)
-
-
-
-Formulates and solves a \*\*linear programming (LP)\*\* model using Gurobi
-
-to find the optimal charging schedule for the entire EV fleet over one
-
-representative day.
-
-
-
-\#### System parameters
-
-| Parameter | Value |
-
-|---|---|
-
-| Number of vehicles | 1,129 |
-
-| Time slots | 96 × 15 min |
-
-| EV battery capacity | 60 kWh |
-
-| Max charging power | 11 kW (AC Type 2) |
-
-| SOC bounds | 15% – 90% of capacity |
-
-| Round-trip charging efficiency | 90% |
-
-| Self-discharge | 0.05%/h |
-
-| PV installed capacity | 1,000 kW |
-
-
-
-\#### Decision variables
-
-\- `Pc\[v, t]` — charging power of vehicle `v` in slot `t` \[kW]
-
-\- `SOC\[v, t]` — state of charge of vehicle `v` at start of slot `t` \[kWh]
-
-\- `P\_imp\[t]` — total grid import power in slot `t` \[kW]
-
-\- `P\_exp\[t]` — total grid export power in slot `t` \[kW]
-
-
-
-\#### Constraints
-
-1\. \*\*No charging when driving\*\* — `Pc\[v,t] = 0` if vehicle not parked
-
-2\. \*\*SOC dynamics\*\* — energy balance per vehicle per slot \[kWh]:
-
-&nbsp;  `SOC\[v,t+1] = SOC\[v,t] × (1 − sd) + Pc\[v,t] × η × Δt − E\_cons\[v,t]`
-
-3\. \*\*Cyclic condition\*\* — each vehicle ends the day with at least as
-
-&nbsp;  much charge as it started: `SOC\[v,96] ≥ SOC\[v,0]`
-
-4\. \*\*Power balance\*\* — per slot \[kW]:
-
-&nbsp;  `PPV\[t] + P\_imp\[t] − P\_exp\[t] = Σ\_v Pc\[v,t]`
-
-
-
-\#### Objective
-
-Minimize total daily grid electricity cost \[€]:
-
-
-
-`min Σ\_t ( P\_imp\[t] × c\_buy\[t] − P\_exp\[t] × c\_sell ) × Δt`
-
-
-
-where `Δt = 0.25 h`, `c\_buy\[t]` is the time-varying buy price \[€/kWh],
-
-and `c\_sell = 0.008 €/kWh` is the fixed feed-in tariff.
-
-
-
-\*\*Note:\*\* PV generation cost (LCOE) is not yet included in the
-
-objective — marked as TODO.
-
-
-
-\*\*Output:\*\* `output/optimization\_results.parquet`, `output/soc\_results.parquet`
-
-
-
----
-
-
-
-\## Running the pipeline
-
-
+Install all required packages:
 
 ```bash
+pip install -r requirements.txt
+A working Gurobi installation with a valid license is required for Step 5
+(optimization). Academic licenses are available for free at
+gurobi.com.
 
-python3 run\_pipeline.py
+2. EQASim/MATSim simulation outputs
+The pipeline reads four files produced by an EQASim/MATSim simulation run.
+These are not included in the repository and must be provided by the user.
+Place them (or point to them via config.yaml) in your local EQASim output folder:
 
+File	Description
+output_network.xml.gz	Road network (nodes and links)
+output_events.xml.gz	Agent activity and trip events
+output_plans.xml.gz	Agent daily plans
+output_allVehicles.xml	Vehicle definitions
+3. Typical Days spreadsheet
+The solar irradiance and electricity price profiles are read from an Excel file:
 
+File	Description
+TypicalDays.xlsx	Hourly solar irradiance (W/m²) and electricity price (€/MWh)
+Place this file in your local data/ folder (path configured in config.yaml).
 
+Configuration
+The pipeline uses a config.yaml file to define all machine-specific paths.
+This file is not tracked by Git (listed in .gitignore) because paths
+differ between machines.
+
+Setup steps
+bash
+# 1. Copy the example template
+cp config.yaml.example config.yaml
+
+# 2. Open config.yaml and fill in your own paths
+config.yaml reference
+text
+# ── Option A: running from a Linux / WSL terminal ────────────────────────────
+eqasim_output:   "/home/YOUR_USERNAME/research/eqasim-france/output"
+typical_days:    "/home/YOUR_USERNAME/research/ev-charging/data/TypicalDays.xlsx"
+pipeline_output: "/home/YOUR_USERNAME/research/ev-charging/output"
+
+# ── Option B: running from Spyder on Windows (WSL paths) ─────────────────────
+# eqasim_output:   "//wsl.localhost/Ubuntu-22.04/home/YOUR_USERNAME/research/eqasim-france/output"
+# typical_days:    "//wsl.localhost/Ubuntu-22.04/home/YOUR_USERNAME/research/ev-charging/data/TypicalDays.xlsx"
+# pipeline_output: "//wsl.localhost/Ubuntu-22.04/home/YOUR_USERNAME/research/ev-charging/output"
+Uncomment the option that matches your setup and replace YOUR_USERNAME with
+your system username.
+
+Folder Setup
+The output/ folder is created automatically when the pipeline runs.
+The data/ folder must be created manually and populated with the input files:
+
+bash
+mkdir -p data output
+# Then place TypicalDays.xlsx inside data/
+Running the Pipeline
+bash
+python3 run_pipeline.py
+All intermediate and final results are saved as .parquet files in the
+output/ folder.
+
+Pipeline Overview
+All steps are orchestrated sequentially by run_pipeline.py.
+
+Step 1 — Network Parser (network_parser.py)
+Parses the MATSim road network and builds a link-length lookup table.
+Output: output/network_links.parquet
+
+Step 2 — Events Parser (events_parser.py)
+Parses agent-level trip and activity events from the MATSim output.
+Output: output/trips_raw.parquet, output/activities_raw.parquet
+
+Step 3 — Timetable Builder (timetable_builder.py)
+Builds a per-vehicle daily timetable of driving and parking episodes.
+Output: output/vehicle_timetable.parquet
+
+Step 4a — Discharge Profile (discharge_profile.py)
+Converts the vehicle timetable into a 96-slot (15-min resolution) energy
+consumption and parking availability profile for each vehicle.
+
+Parameter	Value
+Slot duration	900 s (15 min)
+Slots per day	96
+EV efficiency	0.15 kWh/km
+Battery capacity	60 kWh
+Output: output/discharge_profile.parquet
+
+Step 4b — Input Profiles (prepare_profiles.py)
+Interpolates hourly solar irradiance and electricity price data from
+TypicalDays.xlsx onto the 96-slot resolution using slot-average
+interpolation (4 sub-samples per slot).
+Output: output/input_profiles.parquet
+
+Step 5 — Gurobi LP Optimization (optimize.py)
+Solves a linear programming model to find the cost-optimal charging
+schedule for the entire fleet over one representative day.
+
+System parameters
+Parameter	Value
+Number of vehicles	1,129
+Time slots	96 × 15 min
+Battery capacity	60 kWh
+Max charging power	11 kW (AC Type 2)
+SOC bounds	15% – 90% of capacity
+Charging efficiency	90% (round-trip)
+Self-discharge	0.05%/h
+PV installed capacity	1,000 kW
+Objective
+Minimize total daily grid electricity cost [€]:
+
+min
+⁡
+∑
+t
+(
+P
+imp
+[
+t
+]
+⋅
+c
+buy
+[
+t
+]
+−
+P
+exp
+[
+t
+]
+⋅
+c
+sell
+)
+⋅
+Δ
+t
+min∑ 
+t
+ (P 
+imp
+ [t]⋅c 
+buy
+ [t]−P 
+exp
+ [t]⋅c 
+sell
+ )⋅Δt
+
+where $\Delta t = 0.25$ h and $c_{\text{sell}} = 0.008$ €/kWh.
+
+Output: output/optimization_results.parquet, output/soc_results.parquet
+
+Step 6 — Result Visualization (plot_results.py)
+Generates plots of the optimized charging schedule, SOC profiles, and
+grid import/export curves.
+
+Notes
+config.yaml is machine-specific and must never be committed to Git.
+
+The output/ folder is also excluded from Git (auto-generated at runtime).
+
+Gurobi must be activated on your machine before running Step 5.
+
+text
+
+***
+
+A few things to double-check before pasting:
+- **Number of vehicles (1,129)** — confirm this matches your current simulation run, as it may change between EQASim scenarios.
+- **`output_plans.xml.gz`** — it appears in your `run_pipeline.py` as `PLANS_PATH` but I didn't see it used downstream yet; you can remove it from the table if it's not actually consumed.
+- The `data/` folder is visible in your project  but excluded from the repo, so the manual `mkdir` instruction is necessary.[1]
