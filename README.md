@@ -149,46 +149,7 @@ PV installed capacity	1,000 kW
 Objective
 Minimize total daily grid electricity cost [€]:
 
-min
-⁡
-∑
-t
-(
-P
-imp
-[
-t
-]
-⋅
-c
-buy
-[
-t
-]
-−
-P
-exp
-[
-t
-]
-⋅
-c
-sell
-)
-⋅
-Δ
-t
-min∑ 
-t
- (P 
-imp
- [t]⋅c 
-buy
- [t]−P 
-exp
- [t]⋅c 
-sell
- )⋅Δt
+min∑t(Pimp[t]⋅cbuy[t]−Pexp[t]⋅csell)⋅Δt
 
 where $\Delta t = 0.25$ h and $c_{\text{sell}} = 0.008$ €/kWh.
 
