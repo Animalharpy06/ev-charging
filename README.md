@@ -1,6 +1,3 @@
-Here is the full README text ready to paste:
-
-text
 # EV Fleet Smart Charging Optimization Pipeline
 
 This pipeline processes urban mobility simulation outputs (EQASim/MATSim) to
@@ -15,7 +12,7 @@ representative typical day.
 
 ev-charging/
 ├── data/ # Input data (NOT included in the repo — see below)
-├── output/ # Generated automatically at runtime
+├── output/ # Generated automatically at Runtime
 ├── run_pipeline.py # Main entry point — runs all steps in sequence
 ├── network_parser.py
 ├── events_parser.py
@@ -29,7 +26,6 @@ ev-charging/
 ├── requirements.txt
 └── README.md
 
-text
 
 ---
 
@@ -39,7 +35,7 @@ text
 
 Install all required packages:
 
-```bash
+
 pip install -r requirements.txt
 A working Gurobi installation with a valid license is required for Step 5
 (optimization). Academic licenses are available for free at
@@ -50,15 +46,16 @@ The pipeline reads four files produced by an EQASim/MATSim simulation run.
 These are not included in the repository and must be provided by the user.
 Place them (or point to them via config.yaml) in your local EQASim output folder:
 
-File	Description
+File			Description
 output_network.xml.gz	Road network (nodes and links)
 output_events.xml.gz	Agent activity and trip events
 output_plans.xml.gz	Agent daily plans
 output_allVehicles.xml	Vehicle definitions
+
 3. Typical Days spreadsheet
 The solar irradiance and electricity price profiles are read from an Excel file:
 
-File	Description
+File			Description
 TypicalDays.xlsx	Hourly solar irradiance (W/m²) and electricity price (€/MWh)
 Place this file in your local data/ folder (path configured in config.yaml).
 
@@ -68,7 +65,7 @@ This file is not tracked by Git (listed in .gitignore) because paths
 differ between machines.
 
 Setup steps
-bash
+
 # 1. Copy the example template
 cp config.yaml.example config.yaml
 
@@ -91,12 +88,13 @@ Folder Setup
 The output/ folder is created automatically when the pipeline runs.
 The data/ folder must be created manually and populated with the input files:
 
-bash
+
 mkdir -p data output
 # Then place TypicalDays.xlsx inside data/
-Running the Pipeline
-bash
+
+Running the Pipeline:
 python3 run_pipeline.py
+
 All intermediate and final results are saved as .parquet files in the
 output/ folder.
 
@@ -165,12 +163,3 @@ config.yaml is machine-specific and must never be committed to Git.
 The output/ folder is also excluded from Git (auto-generated at runtime).
 
 Gurobi must be activated on your machine before running Step 5.
-
-text
-
-***
-
-A few things to double-check before pasting:
-- **Number of vehicles (1,129)** — confirm this matches your current simulation run, as it may change between EQASim scenarios.
-- **`output_plans.xml.gz`** — it appears in your `run_pipeline.py` as `PLANS_PATH` but I didn't see it used downstream yet; you can remove it from the table if it's not actually consumed.
-- The `data/` folder is visible in your project  but excluded from the repo, so the manual `mkdir` instruction is necessary.[1]

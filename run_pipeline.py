@@ -50,7 +50,12 @@ pd.DataFrame(activities).to_parquet(os.path.join(OUTPUT_DIR, "activities_raw.par
 # ── Step 3: Build vehicle timetable ──────────────────────────────────────
 print("\n[Step 3] Building vehicle timetable...")
 trips_df  = pd.read_parquet(os.path.join(OUTPUT_DIR, "trips_raw.parquet"))
-timetable = build_timetable(trips_df)
+timetable = build_timetable(
+    trips_df,
+    plans_path = PLANS_PATH,   # already defined at top of run_pipeline.py
+    nodes      = nodes,        # returned by parse_network() in Step 1
+    links      = links         # returned by parse_network() in Step 1
+)
 timetable.to_parquet(os.path.join(OUTPUT_DIR, "vehicle_timetable.parquet"))
 print(f"  → {len(timetable):,} episodes for {timetable['vehicle_id'].nunique():,} vehicles")
 

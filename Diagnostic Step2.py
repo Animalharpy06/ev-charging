@@ -10,8 +10,15 @@ print("\n[DIAGNOSTIC Step 2] Checking event attributes...")
 
 import gzip
 import xml.etree.ElementTree as ET
+import os
+import yaml
 
-EVENTS_PATH = "//wsl.localhost/Ubuntu-22.04/home/mattiasamore/project/output/simulation_output_01/output_events.xml.gz"
+# ── Load config ───────────────────────────────────────────────────────────────
+with open(os.path.join(os.path.dirname(__file__), "config.yaml")) as f:
+    cfg = yaml.safe_load(f)
+
+SIM_OUTPUT        = cfg["eqasim_output"]
+EVENTS_PATH   = os.path.join(SIM_OUTPUT, "output_events.xml.gz")
 
 # Events we rely on and attributes we read from each
 events_we_use = {

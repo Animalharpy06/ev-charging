@@ -10,8 +10,16 @@ print("\n[DIAGNOSTIC Step 1] Checking network file structure...")
 
 import gzip
 import xml.etree.ElementTree as ET
+import os
+import yaml
 
-NETWORK_PATH = "//wsl.localhost/Ubuntu-22.04/home/mattiasamore/project/output/simulation_output_01/output_network.xml.gz"
+
+# ── Load config ───────────────────────────────────────────────────────────────
+with open(os.path.join(os.path.dirname(__file__), "config.yaml")) as f:
+    cfg = yaml.safe_load(f)
+
+SIM_OUTPUT        = cfg["eqasim_output"]
+NETWORK_PATH  = os.path.join(SIM_OUTPUT, "output_network.xml.gz")
 
 node_sample = None
 link_sample = None
