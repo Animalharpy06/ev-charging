@@ -278,6 +278,7 @@ def build_timetable(trips_df, plans_path=None, nodes=None, links=None):
     if plans_path is not None and nodes is not None and links is not None:
         print("  → Enriching parked episodes with activity types...")
         plans_df = parse_plans(plans_path)
+        plans_df.to_parquet("output/plans_debug.parquet")
         timetable = _match_activities(timetable, plans_df, nodes, links)
 
     return timetable
@@ -297,6 +298,7 @@ def _match_activities(timetable_df, plans_df, nodes, links):
     timetable_df["activity_type"] = None
     timetable_df["x"]             = float("nan")
     timetable_df["y"]             = float("nan")
+    # timetable_df["match_status"]  = "not_checked"
 
     # Boolean Series that is True only for parked rows
     parked_mask = timetable_df["episode_type"] == "parked"
@@ -319,8 +321,6 @@ def _match_activities(timetable_df, plans_df, nodes, links):
     for idx, row in timetable_df[parked_mask].iterrows():
         person_id = row["person_id"]
         link_id   = str(row["link_id"])
-        t_start   = row["t_start"]
-        t_end     = row["t_end"]
 
         key = (person_id, link_id)
 
@@ -329,27 +329,22 @@ def _match_activities(timetable_df, plans_df, nodes, links):
             # plans_lookup.groups[key] returns the integer indices of the matching rows in plans_df 
             # .loc[...] retrieves them (the matching rows)
 
-            match = candidates[
-                (candidates["start_time_s"] >= t_start) &
-                (candidates["start_time_s"] <= t_end)]
+            match = candidates
             
-            """
-            Filters candidates to only those where the activity start_time_s falls strictly inside the parking window (t_start, t_end). 
-            This is the core matching condition. We use strict inequalities (> and <) because:
-                start_time_s > t_start — the agent walked to the activity after the car stopped, so activity start is always after parking start
-                start_time_s < t_end — the activity must end before the next trip starts
-            """
 
             if len(match) >= 1:
                 timetable_df.at[idx, "activity_type"] = match.iloc[0]["activity_type"]
                 timetable_df.at[idx, "x"]             = match.iloc[0]["x"]
                 timetable_df.at[idx, "y"]             = match.iloc[0]["y"]
+                # timetable_df.at[idx, "match_status"]  = "matched"
                 matched += 1
                 continue
 
         # No match — fallback to network node coordinates
         unmatched += 1
         timetable_df.at[idx, "activity_type"] = "unknown"
+        # timetable_df.at[idx, "match_status"]  = "unmatched"
+        
         if link_id in links:
             to_node_id = links[link_id].to_node
             if to_node_id in nodes:
