@@ -77,7 +77,7 @@ The pipeline uses a config.yaml file to define all machine-specific paths.
 This file is not tracked by Git (listed in .gitignore) because paths
 differ between machines.
 
-Setup steps
+### Setup steps
 
 #### 1. Copy the example template
 cp config.yaml.example config.yaml
@@ -89,7 +89,7 @@ The output/ folder is created automatically when the pipeline runs.
 The data/ folder must be created manually and populated with the input files:
 
 mkdir -p data output
-# Then place TypicalDays.xlsx inside data/
+Then place TypicalDays.xlsx inside data/
 
 Running the Pipeline:
 python3 run_pipeline.py
