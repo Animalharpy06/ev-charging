@@ -111,7 +111,6 @@ def run_optimization():
     m.setObjective(obj, GRB.MINIMIZE)
 
     # ── Solve ─────────────────────────────────────────────────────────────────
-    m.Params.DualReductions = 0     # forces Gurobi to distinguish infeasible vs unbounded
     m.optimize()
 
     # ── Extract results ───────────────────────────────────────────────────────

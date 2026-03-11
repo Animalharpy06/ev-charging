@@ -278,7 +278,7 @@ def build_timetable(trips_df, plans_path=None, nodes=None, links=None):
     if plans_path is not None and nodes is not None and links is not None:
         print("  → Enriching parked episodes with activity types...")
         plans_df = parse_plans(plans_path)
-        plans_df.to_parquet("output/plans_debug.parquet")
+        # plans_df.to_parquet("output/plans_debug.parquet")     # If you want to save the plans in outputs
         timetable = _match_activities(timetable, plans_df, nodes, links)
 
     return timetable

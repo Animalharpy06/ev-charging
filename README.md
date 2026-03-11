@@ -12,18 +12,31 @@ representative typical day.
 
 ev-charging/
 ├── data/ # Input data (NOT included in the repo — see below)
+
 ├── output/ # Generated automatically at Runtime
+
 ├── run_pipeline.py # Main entry point — runs all steps in sequence
+
 ├── network_parser.py
+
 ├── events_parser.py
+
 ├── timetable_builder.py
+
 ├── discharge_profile.py
+
 ├── prepare_profiles.py
+
 ├── optimize.py
+
 ├── plot_results.py
+
 ├── config.yaml # Your local config (NOT in repo — see below)
+
 ├── config.yaml.example # Template for config.yaml
+
 ├── requirements.txt
+
 └── README.md
 
 
@@ -88,7 +101,6 @@ Folder Setup
 The output/ folder is created automatically when the pipeline runs.
 The data/ folder must be created manually and populated with the input files:
 
-
 mkdir -p data output
 # Then place TypicalDays.xlsx inside data/
 
@@ -121,7 +133,7 @@ Parameter	Value
 Slot duration	900 s (15 min)
 Slots per day	96
 EV efficiency	0.15 kWh/km
-Battery capacity	60 kWh
+Battery capacity 60 kWh
 Output: output/discharge_profile.parquet
 
 Step 4b — Input Profiles (prepare_profiles.py)
@@ -134,22 +146,10 @@ Step 5 — Gurobi LP Optimization (optimize.py)
 Solves a linear programming model to find the cost-optimal charging
 schedule for the entire fleet over one representative day.
 
-System parameters
-Parameter	Value
-Number of vehicles	1,129
-Time slots	96 × 15 min
-Battery capacity	60 kWh
-Max charging power	11 kW (AC Type 2)
-SOC bounds	15% – 90% of capacity
-Charging efficiency	90% (round-trip)
-Self-discharge	0.05%/h
-PV installed capacity	1,000 kW
 Objective
 Minimize total daily grid electricity cost [€]:
 
 min∑t(Pimp[t]⋅cbuy[t]−Pexp[t]⋅csell)⋅Δt
-
-where $\Delta t = 0.25$ h and $c_{\text{sell}} = 0.008$ €/kWh.
 
 Output: output/optimization_results.parquet, output/soc_results.parquet
 
